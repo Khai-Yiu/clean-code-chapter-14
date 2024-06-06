@@ -11,13 +11,13 @@ public class Args {
         Character,
         ArgumentMarshaler
     >();
-    private Map<Character, String> stringArgs = new HashMap<
+    private Map<Character, ArgumentMarshaler> stringArgs = new HashMap<
         Character,
-        String
+        ArgumentMarshaler
     >();
     private Set<Character> argsFound = new HashSet<Character>();
     private int currentArgument;
-    private char errorArgument = '\0';
+    private char errorArgumentId = '\0';
 
     enum ErrorCode {
         OK,
@@ -71,7 +71,7 @@ public class Args {
     }
 
     private void parseStringSchemaElement(char elementId) {
-        stringArgs.put(elementId, "");
+        stringArgs.put(elementId, new StringArgumentMarshaler());
     }
 
     private boolean isStringSchemaElement(String elementTail) {
@@ -122,14 +122,15 @@ public class Args {
         return set;
     }
 
-    private void setStringArg(char argChar, String s) {
+    private void setStringArg(char argChar) throws ArgsException {
         currentArgument++;
         try {
-            stringArgs.put(argChar, args[currentArgument]);
+            stringArgs.get(argChar).setString(args[currentArgument]);
         } catch (ArrayIndexOutOfBoundsException e) {
             valid = false;
-            errorArgument = argChar;
+            errorArgumentId = argChar;
             errorCode = ErrorCode.MISSING_STRING;
+            throw new ArgsException();
         }
     }
 
@@ -161,7 +162,7 @@ public class Args {
             case MISSING_STRING:
                 return String.format(
                     "Could not find string parameter for -%c.",
-                    errorArgument
+                    errorArgumentId
                 );
             case OK:
                 throw new Exception("TILT: Should not get here.");
@@ -184,11 +185,8 @@ public class Args {
     }
 
     public String getString(char arg) {
-        return blankIfNull(stringArgs.get(arg));
-    }
-
-    private String blankIfNull(String s) {
-        return s == null ? "" : s;
+        Args.ArgumentMarshaler am = stringArgs.get(arg);
+        return am == null ? "" : am.getString();
     }
 
     public boolean has(char arg) {
@@ -202,6 +200,7 @@ public class Args {
     private class ArgumentMarshaler {
 
         private boolean booleanValue = false;
+        private String stringValue;
 
         public void setBoolean(boolean value) {
             booleanValue = value;
@@ -210,6 +209,14 @@ public class Args {
         public boolean getBoolean() {
             return booleanValue;
         }
+
+        public void setString(String s) {
+            stringValue = s;
+        }
+
+        public String getString() {
+            return stringValue == null ? "" : stringValue;
+        }
     }
 
     private class BooleanArgumentMarshaler extends ArgumentMarshaler {}
@@ -217,4 +224,6 @@ public class Args {
     private class StringArgumentMarshaler extends ArgumentMarshaler {}
 
     private class IntegerArgumentMarshaler extends ArgumentMarshaler {}
+
+    private class ArgsException extends Exception {}
 }
