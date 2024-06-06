@@ -209,7 +209,7 @@ public class Args {
 
     public boolean getBoolean(char arg) {
         Args.ArgumentMarshaler am = booleanArgs.get(arg);
-        return am != null && am.getBoolean();
+        return am != null && (Boolean) am.get();
     }
 
     public String getString(char arg) {
@@ -261,12 +261,18 @@ public class Args {
         }
 
         public abstract void set(String s);
+
+        public abstract Object get();
     }
 
     private class BooleanArgumentMarshaler extends ArgumentMarshaler {
 
         public void set(String s) {
             booleanValue = true;
+        }
+
+        public Object get() {
+            return booleanValue;
         }
     }
 
