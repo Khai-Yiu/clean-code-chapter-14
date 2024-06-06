@@ -15,6 +15,10 @@ public class Args {
         Character,
         ArgumentMarshaler
     >();
+    private Map<Character, ArgumentMarshaler> intArgs = new HashMap<
+        Character,
+        ArgumentMarshaler
+    >();
     private Set<Character> argsFound = new HashSet<Character>();
     private int currentArgument;
     private char errorArgumentId = '\0';
@@ -78,12 +82,16 @@ public class Args {
         return elementTail.equals("*");
     }
 
+    private void parseBooleanSchemaElement(char elementId) {
+        booleanArgs.put(elementId, new BooleanArgumentMarshaler());
+    }
+
     private boolean isBooleanSchemaElement(String elementTail) {
         return elementTail.length() == 0;
     }
 
-    private void parseBooleanSchemaElement(char elementId) {
-        booleanArgs.put(elementId, new BooleanArgumentMarshaler());
+    private void parseIntegerSchemaElement(char elementId) {
+        intArgs.put(elementId, new IntegerArgumentMarshaler());
     }
 
     private boolean parseArguments() {
@@ -146,6 +154,26 @@ public class Args {
         return booleanArgs.containsKey(argChar);
     }
 
+    private void setIntArg(char argChar) throws ArgsException {
+        currentArgument++;
+        String parameter = null;
+        try {
+            parameter = args[currentArgument];
+            intArgs.get(argChar).setInteger(Integer.parseInt(parameter));
+        } catch (ArrayIndexOutOfBoundsException e) {
+            valid = false;
+            errorArgumentId = argChar;
+            errorCode = ErrorCode.MISSING_INTEGER;
+            throw new ArgsException();
+        } catch (NumberFormatException e) {
+            valid = false;
+            errorArgumentId = argChar;
+            errorParameter = parameter;
+            errorCode = ErrorCode.INVALID_INTEGER;
+            throw new ArgsException();
+        }
+    }
+
     public int cardinality() {
         return argsFound.size();
     }
@@ -189,6 +217,11 @@ public class Args {
         return am == null ? "" : am.getString();
     }
 
+    public int getInt(char arg) {
+        Args.ArgumentMarshaler am = intArgs.get(arg);
+        return am == null ? 0 : am.getInteger();
+    }
+
     public boolean has(char arg) {
         return argsFound.contains(arg);
     }
@@ -201,6 +234,7 @@ public class Args {
 
         private boolean booleanValue = false;
         private String stringValue;
+        private int integerValue;
 
         public void setBoolean(boolean value) {
             booleanValue = value;
@@ -216,6 +250,14 @@ public class Args {
 
         public String getString() {
             return stringValue == null ? "" : stringValue;
+        }
+
+        public void setInteger(int i) {
+            integerValue = i;
+        }
+
+        public int getInteger() {
+            return integerValue;
         }
     }
 
