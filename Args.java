@@ -179,11 +179,7 @@ public class Args {
     }
 
     public boolean getBoolean(char arg) {
-        return falseIfNull(booleanArgs.get(arg).getBoolean());
-    }
-
-    private boolean falseIfNull(Boolean b) {
-        return b == null ? false : b;
+        return booleanArgs.get(arg).getBoolean();
     }
 
     public String getString(char arg) {
