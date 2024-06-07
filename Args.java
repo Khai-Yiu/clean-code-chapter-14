@@ -129,19 +129,13 @@ public class Args {
         ArgumentMarshaler m = marshalers.get(argChar);
         if (m == null) return false;
         try {
-            if (m instanceof BooleanArgumentMarshaler) m.set(currentArgument);
-            else if (m instanceof StringArgumentMarshaler) m.set(
-                currentArgument
-            );
-            else if (m instanceof IntegerArgumentMarshaler) m.set(
-                currentArgument
-            );
+            m.set(currentArgument);
+            return true;
         } catch (ArgsException e) {
             valid = false;
             errorArgumentId = argChar;
             throw e;
         }
-        return true;
     }
 
     public int cardinality() {
@@ -232,8 +226,6 @@ public class Args {
         public abstract void set(Iterator<String> currentArgument)
             throws ArgsException;
 
-        public abstract void set(String s) throws ArgsException;
-
         public abstract Object get();
     }
 
@@ -244,8 +236,6 @@ public class Args {
         public void set(Iterator<String> currentArgument) throws ArgsException {
             booleanValue = true;
         }
-
-        public void set(String s) {}
 
         public Object get() {
             return booleanValue;
@@ -265,10 +255,6 @@ public class Args {
             }
         }
 
-        public void set(String s) {
-            stringValue = s;
-        }
-
         public Object get() {
             return stringValue;
         }
@@ -282,21 +268,13 @@ public class Args {
             String parameter = null;
             try {
                 parameter = currentArgument.next();
-                set(parameter);
+                intValue = Integer.parseInt(parameter);
             } catch (NoSuchElementException e) {
                 errorCode = ErrorCode.MISSING_INTEGER;
                 throw new ArgsException();
-            } catch (ArgsException e) {
+            } catch (NumberFormatException e) {
                 errorParameter = parameter;
                 errorCode = ErrorCode.INVALID_INTEGER;
-                throw e;
-            }
-        }
-
-        public void set(String s) throws ArgsException {
-            try {
-                intValue = Integer.parseInt(s);
-            } catch (NumberFormatException e) {
                 throw new ArgsException();
             }
         }
