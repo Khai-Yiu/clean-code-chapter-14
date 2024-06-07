@@ -213,8 +213,14 @@ public class Args {
     }
 
     public boolean getBoolean(char arg) {
-        Args.ArgumentMarshaler am = booleanArgs.get(arg);
-        return am != null && (Boolean) am.get();
+        Args.ArgumentMarshaler am = marshalers.get(arg);
+        boolean b = false;
+        try {
+            b = am != null && (Boolean) am.get();
+        } catch (ClassCastException e) {
+            b = false;
+        }
+        return b;
     }
 
     public String getString(char arg) {
