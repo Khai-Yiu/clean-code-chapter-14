@@ -89,13 +89,22 @@ public class ArgsException extends Exception {
                     "Could not find double parameter for -%c.",
                     errorArgumentId
                 );
+            case INVALID_ARGUMENT_NAME:
+                return String.format(
+                    "'%c' is not a valid argument name.",
+                    errorArgumentId
+                );
+            case INVALID_ARGUMENT_FORMAT:
+                return String.format(
+                    "'%s' is not a valid argument format.",
+                    errorParameter
+                );
         }
         return "";
     }
 
     public enum ErrorCode {
         OK,
-        INVALID_FORMAT,
         UNEXPECTED_ARGUMENT,
         INVALID_ARGUMENT_NAME,
         MISSING_STRING,
@@ -103,5 +112,6 @@ public class ArgsException extends Exception {
         INVALID_INTEGER,
         MISSING_DOUBLE,
         INVALID_DOUBLE,
+        INVALID_ARGUMENT_FORMAT,
     }
 }
