@@ -14,13 +14,16 @@ public class Args {
     private Set<Character> argsFound = new HashSet<Character>();
     private int currentArgument;
     private char errorArgumentId = '\0';
+    private String errorParameter = "TILT";
+    private ErrorCode errorCode = ErrorCode.OK;
 
-    enum ErrorCode {
+    private enum ErrorCode {
         OK,
         MISSING_STRING,
+        MISSING_INTEGER,
+        INVALID_INTEGER,
+        UNEXPECTED_ARGUMENT,
     }
-
-    private ErrorCode errorCode = ErrorCode.OK;
 
     public Args(String schema, String[] args) throws ParseException {
         this.schema = schema;
@@ -31,7 +34,9 @@ public class Args {
     private boolean parse() throws ParseException {
         if (schema.length() == 0 && args.length == 0) return true;
         parseSchema();
-        parseArguments();
+        try {
+            parseArguments();
+        } catch (ArgsException e) {}
         return valid;
     }
 
@@ -92,7 +97,7 @@ public class Args {
         return elementTail.equals("#");
     }
 
-    private boolean parseArguments() {
+    private boolean parseArguments() throws ArgsException {
         for (
             currentArgument = 0;
             currentArgument < args.length;
@@ -104,18 +109,19 @@ public class Args {
         return true;
     }
 
-    private void parseArgument(String arg) {
+    private void parseArgument(String arg) throws ArgsException {
         if (arg.startsWith("-")) parseElements(arg);
     }
 
-    private void parseElements(String arg) {
+    private void parseElements(String arg) throws ArgsException {
         for (int i = 1; i < arg.length(); i++) parseElement(arg.charAt(i));
     }
 
-    private void parseElement(char argChar) {
+    private void parseElement(char argChar) throws ArgsException {
         if (setArgument(argChar)) argsFound.add(argChar);
         else {
             unexpectedArguments.add(argChar);
+            errorCode = ErrorCode.UNEXPECTED_ARGUMENT;
             valid = false;
         }
     }
@@ -135,22 +141,6 @@ public class Args {
         return true;
     }
 
-    private void setStringArg(ArgumentMarshaler m) throws ArgsException {
-        currentArgument++;
-        try {
-            m.set(args[currentArgument]);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            errorCode = ErrorCode.MISSING_STRING;
-            throw new ArgsException();
-        }
-    }
-
-    private void setBooleanArg(ArgumentMarshaler m) {
-        try {
-            m.set("true");
-        } catch (ArgsException e) {}
-    }
-
     private void setIntArg(ArgumentMarshaler m) throws ArgsException {
         currentArgument++;
         String parameter = null;
@@ -167,6 +157,22 @@ public class Args {
         }
     }
 
+    private void setStringArg(ArgumentMarshaler m) throws ArgsException {
+        currentArgument++;
+        try {
+            m.set(args[currentArgument]);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            errorCode = ErrorCode.MISSING_STRING;
+            throw new ArgsException();
+        }
+    }
+
+    private void setBooleanArg(ArgumentMarshaler m) {
+        try {
+            m.set("true");
+        } catch (ArgsException e) {}
+    }
+
     public int cardinality() {
         return argsFound.size();
     }
@@ -177,16 +183,27 @@ public class Args {
     }
 
     public String errorMessage() throws Exception {
-        if (unexpectedArguments.size() > 0) {
-            return unexpectedArgumentMessage();
-        } else switch (errorCode) {
+        switch (errorCode) {
+            case OK:
+                throw new Exception("TILT: Should not get here.");
+            case UNEXPECTED_ARGUMENT:
+                return unexpectedArgumentMessage();
             case MISSING_STRING:
                 return String.format(
                     "Could not find string parameter for -%c.",
                     errorArgumentId
                 );
-            case OK:
-                throw new Exception("TILT: Should not get here.");
+            case INVALID_INTEGER:
+                return String.format(
+                    "Argument -%c expects an integer but was '%s'.",
+                    errorArgumentId,
+                    errorParameter
+                );
+            case MISSING_INTEGER:
+                return String.format(
+                    "Could not find integer parameter for -%c.",
+                    errorArgumentId
+                );
         }
         return "";
     }
@@ -237,9 +254,11 @@ public class Args {
         return valid;
     }
 
+    private class ArgsException extends Exception {}
+
     private abstract class ArgumentMarshaler {
 
-        public abstract void set(String s);
+        public abstract void set(String s) throws ArgsException;
 
         public abstract Object get();
     }
@@ -259,7 +278,7 @@ public class Args {
 
     private class StringArgumentMarshaler extends ArgumentMarshaler {
 
-        private String stringValue;
+        private String stringValue = "";
 
         public void set(String s) {
             stringValue = s;
@@ -286,6 +305,4 @@ public class Args {
             return intValue;
         }
     }
-
-    private class ArgsException extends Exception {}
 }
