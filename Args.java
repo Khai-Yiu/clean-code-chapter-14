@@ -49,12 +49,26 @@ public class Args {
         char elementId = element.charAt(0);
         String elementTail = element.substring(1);
         validateSchemaElementId(elementId);
-        if (isBooleanSchemaElement(elementTail)) parseBooleanSchemaElement(
-            elementId
+        if (isBooleanSchemaElement(elementTail)) marshalers.put(
+            elementId,
+            new BooleanArgumentMarshaler()
         );
-        else if (isStringSchemaElement(elementTail)) parseStringSchemaElement(
-            elementId
+        else if (isStringSchemaElement(elementTail)) marshalers.put(
+            elementId,
+            new StringArgumentMarshaler()
         );
+        else if (isIntegerSchemaElement(elementTail)) {
+            marshalers.put(elementId, new IntegerArgumentMarshaler());
+        } else {
+            throw new ParseException(
+                String.format(
+                    "Argument: %c has invalid format: %s.",
+                    elementId,
+                    elementTail
+                ),
+                0
+            );
+        }
     }
 
     private void validateSchemaElementId(char elementId) throws ParseException {
@@ -66,24 +80,16 @@ public class Args {
         }
     }
 
-    private void parseStringSchemaElement(char elementId) {
-        marshalers.put(elementId, new StringArgumentMarshaler());
-    }
-
     private boolean isStringSchemaElement(String elementTail) {
         return elementTail.equals("*");
-    }
-
-    private void parseBooleanSchemaElement(char elementId) {
-        marshalers.put(elementId, new BooleanArgumentMarshaler());
     }
 
     private boolean isBooleanSchemaElement(String elementTail) {
         return elementTail.length() == 0;
     }
 
-    private void parseIntegerSchemaElement(char elementId) {
-        marshalers.put(elementId, new IntegerArgumentMarshaler());
+    private boolean isIntegerSchemaElement(String elementTail) {
+        return elementTail.equals("#");
     }
 
     private boolean parseArguments() {
