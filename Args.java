@@ -19,6 +19,10 @@ public class Args {
         Character,
         ArgumentMarshaler
     >();
+    private Map<Character, ArgumentMarshaler> marshalers = new HashMap<
+        Character,
+        ArgumentMarshaler
+    >();
     private Set<Character> argsFound = new HashSet<Character>();
     private int currentArgument;
     private char errorArgumentId = '\0';
@@ -75,7 +79,9 @@ public class Args {
     }
 
     private void parseStringSchemaElement(char elementId) {
-        stringArgs.put(elementId, new StringArgumentMarshaler());
+        ArgumentMarshaler m = new StringArgumentMarshaler();
+        stringArgs.put(elementId, m);
+        marshalers.put(elementId, m);
     }
 
     private boolean isStringSchemaElement(String elementTail) {
@@ -83,7 +89,9 @@ public class Args {
     }
 
     private void parseBooleanSchemaElement(char elementId) {
-        booleanArgs.put(elementId, new BooleanArgumentMarshaler());
+        ArgumentMarshaler m = new BooleanArgumentMarshaler();
+        booleanArgs.put(elementId, m);
+        marshalers.put(elementId, m);
     }
 
     private boolean isBooleanSchemaElement(String elementTail) {
@@ -91,7 +99,9 @@ public class Args {
     }
 
     private void parseIntegerSchemaElement(char elementId) {
-        intArgs.put(elementId, new IntegerArgumentMarshaler());
+        ArgumentMarshaler m = new IntegerArgumentMarshaler();
+        intArgs.put(elementId, m);
+        marshalers.put(elementId, m);
     }
 
     private boolean parseArguments() {
